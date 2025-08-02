@@ -77,14 +77,14 @@ function Footer() {
 
           <div className="mx-3">
             <Link
-              href="/documents/Harsha_Masandr_Vanarajaiah_Resume.pdf"
+              href="/documents/Harsha_Masadrapalya_Resume.pdf"
               target="_blank"
             >
               <button
                 className={
                   resolvedTheme === "white"
                     ? `white-btn rounded-lg px-2 hover:bg-transparent hover:text-white hover:border-black`
-                    : `black-btn rounded-lg px-2 hover:bg-transparent hover:text-black hover:border-black`
+                    : `black-btn rounded-lg px-2 hover:bg-transparent hover:text-white hover:border-white`
                 }
               >
                 Resume

@@ -1038,6 +1038,11 @@ body {
   border-color: rgb(0 0 0 / var(--tw-border-opacity)) !important;
 }
 
+.hover\:border-white:hover {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(255 255 255 / var(--tw-border-opacity)) !important;
+}
+
 .hover\:bg-gray-500:hover {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(107 114 128 / var(--tw-bg-opacity)) !important;

@@ -7,14 +7,13 @@ function SkillsComponent() {
 
   const technicalSkills = [
     // C, JavaScript, Typescript, Python, HTML, CSS, React, React Native, Node.js, Jest, Sequelize, Express
+    { name: "Python", imageUrl: "/assets/svgs/python.svg" },
     { name: "C", imageUrl: "/assets/images/C.png" },
     { name: "Javascript", imageUrl: "/assets/svgs/javascript.svg" },
     { name: "Typescript", imageUrl: "/assets/svgs/typescript.svg" },
-    { name: "Python", imageUrl: "/assets/svgs/python.svg" },
     { name: "HTML", imageUrl: "/assets/svgs/html5.svg" },
     { name: "CSS", imageUrl: "/assets/svgs/css.svg" },
     { name: "React", imageUrl: "/assets/svgs/react.svg" },
-    { name: "React Native", imageUrl: "/assets/svgs/react.svg" },
     { name: "NextJs", imageUrl: "/assets/images/nextJs1.jpeg" },
     { name: "Tailwind", imageUrl: "/assets/images/tailwind.webp" },
     {
@@ -34,6 +33,23 @@ function SkillsComponent() {
     { name: "Postgres", imageUrl: "/assets/svgs/postgresql.svg" },
     { name: "MySql", imageUrl: "/assets/svgs/mysql.svg" },
     { name: "MongoDb", imageUrl: "/assets/svgs/mongodb.svg" },
+    { name: "Jenkins", imageUrl: "/assets/svgs/jenkins.svg" },
+    { name: "Git", imageUrl: "/assets/svgs/git.svg" },
+    { name: "Postman", imageUrl: "/assets/svgs/postman.svg" },
+    { name: "Swagger", imageUrl: "/assets/svgs/swagger-svgrepo-com.svg" },
+    { name: "npm", imageUrl: "/assets/svgs/npm.svg" },
+    { name: "Kubernetes", imageUrl: "/assets/svgs/kubernetes-svgrepo-com.svg" },
+    { name: "Docker", imageUrl: "/assets/svgs/docker-logo-svgrepo-com.svg" },
+    { name: "Helm", imageUrl: "/assets/svgs/helm-svgrepo-com.svg" },
+    { name: "Ansible", imageUrl: "/assets/svgs/ansible-svgrepo-com.svg" },
+    {
+      name: "Terraform",
+      imageUrl:
+        resolvedTheme === "dark"
+          ? "/assets/svgs/terraform-icon-svgrepo-com.svg"
+          : "/assets/svgs/terraform-svgrepo-com.svg",
+    },
+    { name: "Redis", imageUrl: "/assets/svgs/redis-svgrepo-com.svg" },
     {
       name: "AWS",
       imageUrl:
@@ -41,10 +57,51 @@ function SkillsComponent() {
           ? "/assets/svgs/aws-dark.svg"
           : "/assets/svgs/aws.svg",
     },
-    { name: "Jenkins", imageUrl: "/assets/svgs/jenkins.svg" },
-    { name: "Git", imageUrl: "/assets/svgs/git.svg" },
-    { name: "Postman", imageUrl: "/assets/svgs/postman.svg" },
-    { name: "npm", imageUrl: "/assets/svgs/npm.svg" },
+    {
+      name: "API Gateway",
+      imageUrl: "/assets/svgs/aws-api-gateway-svgrepo-com.svg",
+    },
+    {
+      name: "CloudFormation",
+      imageUrl: "/assets/svgs/aws-cloudformation-svgrepo-com.svg",
+    },
+    { name: "DynamoDB", imageUrl: "/assets/svgs/aws-dynamodb-svgrepo-com.svg" },
+    {
+      name: "CodeBuild",
+      imageUrl: "/assets/svgs/aws-codedeploy-svgrepo-com.svg",
+    },
+    { name: "Route53", imageUrl: "/assets/svgs/aws-route53-svgrepo-com.svg" },
+    { name: "Lambda", imageUrl: "/assets/svgs/aws-lambda-svgrepo-com.svg" },
+    { name: "EC2", imageUrl: "/assets/svgs/aws-ec2-svgrepo-com.svg" },
+    { name: "S3", imageUrl: "/assets/svgs/aws-s3-svgrepo-com.svg" },
+    { name: "Azure", imageUrl: "/assets/svgs/azure-v2-svgrepo-com.svg" },
+    { name: "Azure VMs", imageUrl: "/assets/svgs/azure-vms-svgrepo-com.svg" },
+    { name: "Azure AKS", imageUrl: "/assets/svgs/azure-aks-svgrepo-com.svg" },
+    {
+      name: "Azure OpenAI",
+      imageUrl:
+        resolvedTheme === "dark"
+          ? "/assets/images/openai.png"
+          : "/assets/svgs/openai-svgrepo-com.svg",
+    },
+    {
+      name: "Azure DevOps",
+      imageUrl: "/assets/svgs/azure-devops-svgrepo-com.svg",
+    },
+    { name: "Azure AI Search", imageUrl: "/assets/images/ai_search.png" },
+    { name: "GCP", imageUrl: "/assets/svgs/gcp-svgrepo-com.svg" },
+    {
+      name: "GKE",
+      imageUrl: "/assets/svgs/google-kubernetes-engine-svgrepo-com.svg",
+    },
+    {
+      name: "Github",
+      imageUrl:
+        resolvedTheme === "dark"
+          ? "/assets/svgs/github-color-svgrepo-com.svg"
+          : "/assets/svgs/github-142-svgrepo-com.svg",
+    },
+    { name: "Prometheus", imageUrl: "/assets/images/prometheus.png" },
   ];
 
   const softSkills = [
