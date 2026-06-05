@@ -7,7 +7,7 @@ export default function AboutMeComponent() {
       <div className="mx-auto max-w-6xl lg:max-w-6xl">
         <blockquote className="text-xl italic hover:bg-opacity-90">
           <p className="my-8 text-justify">
-            {`"A Full-Stack Engineer with a robust foundation from George Mason University, I specialize in building scalable apps and automating infrastructure across AWS, Azure, and GCP. With 4+ years of experience, my stack spans React, Next.js, Node.js, and powerful DevOps tools like Docker, Kubernetes, Terraform, and CI/CD pipelines. I thrive at the intersection of code and cloud—turning complex systems into streamlined, high-performance solutions."`}
+            {`"Senior Software Engineer building enterprise cloud platforms and AI-powered tools at scale. I architect and operate multi-cloud Kubernetes infrastructure across AWS, Azure, GCP, and bare-metal — serving 100+ enterprise customers, including air-gapped and compliance-regulated deployments for financial services and government. My expertise spans cloud-native platform engineering (Terraform, Kubernetes, Helm, custom operators), AI systems (RAG pipelines, multi-LLM orchestration, agentic AI), and customer-facing technical leadership. I pioneer AI-augmented development workflows using Claude Code and actively integrate AI tooling into engineering practices to deliver 3x velocity improvements."`}
           </p>
         </blockquote>
       </div>
