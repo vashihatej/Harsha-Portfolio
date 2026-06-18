@@ -1,25 +1,32 @@
-import { Inter } from "next/font/google";
+import { Outfit, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./provider";
 import Navbar from "./components/navbar";
-import Footer from "./components/footer";
 
-const inter = Inter({ subsets: ["latin"] });
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  weight: ["300","400","500","600","700","800","900"],
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  weight: ["300","400","500","600"],
+});
 
 export const metadata = {
   title: "Harsha Masandrapalya Vanarajaiah",
-  description:
-    "Tech Enthusiast, Avid Programmer, Outdoor Explorer, Nature Enthusiast and Culinary Explorer!",
+  description: "Senior Software Engineer — Cloud-native architect building enterprise Kubernetes platforms and AI systems at scale.",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${outfit.variable} ${dmSans.variable}`}>
         <Providers>
           <Navbar />
           {children}
-          <Footer />
         </Providers>
       </body>
     </html>

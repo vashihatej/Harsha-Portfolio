@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>harsha@cloud:~ — Interactive Terminal</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body { height:100%; }
+
+body {
+  background: #0a0e17;
+  font-family: 'JetBrains Mono', monospace;
+  color: #c9d1d9;
+  display:flex; flex-direction:column;
+  height:100vh; overflow:hidden;
+}
+
+/* Scanlines overlay */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:1000;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px);
+}
+
+/* ── Title bar ── */
+.titlebar {
+  background: #161b22; border-bottom: 1px solid #21262d;
+  padding: .6rem 1rem;
+  display:flex; align-items:center; gap:.8rem;
+  flex-shrink:0;
+}
+
+.dots { display:flex; gap:.4rem; }
+.dot { width:12px;height:12px;border-radius:50%; }
+.dot-r { background:#ff5f57; }
+.dot-y { background:#ffbd2e; }
+.dot-g { background:#28ca41; }
+
+.titlebar-text {
+  flex:1; text-align:center; font-size:.75rem; color:#8b949e;
+}
+
+.titlebar-badge {
+  font-size:.65rem; background:rgba(0,255,136,.1); color:#00ff88;
+  border:1px solid rgba(0,255,136,.2); border-radius:4px; padding:.15rem .5rem;
+}
+
+/* ── Terminal body ── */
+.terminal {
+  flex:1; display:flex; flex-direction:column; overflow:hidden;
+  position:relative;
+}
+
+/* Matrix canvas behind terminal */
+#matrix { position:absolute; inset:0; opacity:.06; pointer-events:none; }
+
+/* ── Output area ── */
+.output {
+  flex:1; overflow-y:auto; padding:1.2rem 1.5rem;
+  position:relative; z-index:1;
+  scroll-behavior:smooth;
+}
+
+.output::-webkit-scrollbar { width:4px; }
+.output::-webkit-scrollbar-track { background:#0a0e17; }
+.output::-webkit-scrollbar-thumb { background:#21262d; border-radius:2px; }
+
+/* ── Input bar ── */
+.input-bar {
+  display:flex; align-items:center; gap:.5rem;
+  padding:.8rem 1.5rem; border-top:1px solid #21262d;
+  background:#0d1117; flex-shrink:0; position:relative; z-index:1;
+}
+
+.prompt-label { color:#00ff88; font-size:.85rem; white-space:nowrap; }
+
+.cmd-input {
+  flex:1; background:transparent; border:none; outline:none;
+  font-family:'JetBrains Mono',monospace; font-size:.85rem; color:#e6edf3;
+  caret-color:#00ff88;
+}
+
+/* ── Output line types ── */
+.line { margin-bottom:.2rem; font-size:.83rem; line-height:1.6; }
+
+.line-cmd  { color:#e6edf3; }
+.line-cmd::before { content:'❯ '; color:#00ff88; }
+
+.line-info { color:#8b949e; }
+.line-success { color:#00ff88; }
+.line-err  { color:#ff5555; }
+.line-warn { color:#f1fa8c; }
+.line-key  { color:#bd93f9; }
+.line-val  { color:#e6edf3; }
+.line-cyan { color:#00d4ff; }
+.line-link { color:#58a6ff; text-decoration:underline; cursor:pointer; }
+.line-blank { height:.6rem; }
+.line-sep { color:#21262d; user-select:none; }
+.line-bold { font-weight:700; }
+
+/* ASCII art */
+.ascii { color:#00ff88; font-size:.65rem; line-height:1.3; white-space:pre; }
+
+/* Metric highlight box */
+.metric-box {
+  display:inline-block; background:rgba(0,255,136,.08);
+  border:1px solid rgba(0,255,136,.2); border-radius:4px;
+  padding:.1rem .5rem; color:#00ff88; font-weight:700;
+}
+
+/* Skill group row */
+.skill-row { padding:.1rem 0; }
+.skill-cat { color:#bd93f9; }
+.skill-list-txt { color:#8b949e; }
+
+/* Experience entry */
+.exp-entry { margin:.4rem 0; padding:.6rem 1rem; border-left:2px solid #00ff88; }
+.exp-role-t { color:#e6edf3; font-weight:700; }
+.exp-co     { color:#00d4ff; }
+.exp-period { color:#8b949e; font-size:.75rem; }
+.exp-pts    { color:#8b949e; margin-top:.3rem; padding-left:.5rem; }
+.exp-pts li { margin:.15rem 0; list-style:none; }
+.exp-pts li::before { content:'▸ '; color:#00ff88; }
+.ic { display:inline-block; background:rgba(0,212,255,.1); border:1px solid rgba(0,212,255,.2); border-radius:3px; padding:.05rem .35rem; color:#00d4ff; font-size:.72rem; margin:.1rem; }
+
+/* Typing cursor */
+.cursor { display:inline-block; width:7px; height:.9em; background:#00ff88; vertical-align:middle; animation:blink 1s step-end infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+
+/* Tab hints */
+.hint-bar {
+  padding:.4rem 1.5rem; background:#0d1117; border-top:1px solid #161b22;
+  font-size:.68rem; color:#4a5568; display:flex; gap:1.5rem; flex-shrink:0;
+}
+.hint-key { color:#00ff88; }
+
+/* Autocomplete dropdown */
+.autocomplete {
+  position:absolute; bottom:52px; left:0;
+  background:#161b22; border:1px solid #21262d; border-radius:4px;
+  min-width:200px; z-index:10; display:none;
+}
+.ac-item {
+  padding:.4rem .8rem; font-size:.78rem; cursor:pointer;
+  transition:background .1s;
+}
+.ac-item:hover, .ac-item.selected { background:#21262d; }
+.ac-item .ac-cmd { color:#00ff88; }
+.ac-item .ac-desc { color:#8b949e; font-size:.7rem; }
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<!-- Title bar -->
+<div class="titlebar">
+  <div class="dots">
+    <div class="dot dot-r"></div>
+    <div class="dot dot-y"></div>
+    <div class="dot dot-g"></div>
+  </div>
+  <div class="titlebar-text">harsha@cloud-engineer: ~ — interactive portfolio terminal</div>
+  <div class="titlebar-badge">v2.6.1</div>
+</div>
+
+<!-- Terminal -->
+<div class="terminal">
+  <canvas id="matrix"></canvas>
+
+  <div class="output" id="output"></div>
+
+  <div class="autocomplete" id="ac"></div>
+
+  <div class="input-bar">
+    <span class="prompt-label">harsha@cloud:~$</span>
+    <input id="cmd" class="cmd-input" type="text" autofocus autocomplete="off" spellcheck="false" placeholder="type a command… (try 'help')">
+  </div>
+
+  <div class="hint-bar">
+    <span><span class="hint-key">↑↓</span> history</span>
+    <span><span class="hint-key">Tab</span> autocomplete</span>
+    <span><span class="hint-key">Ctrl+L</span> clear</span>
+    <span><span class="hint-key">help</span> show commands</span>
+    <span><span class="hint-key">whoami</span> · <span class="hint-key">experience</span> · <span class="hint-key">skills</span> · <span class="hint-key">projects</span> · <span class="hint-key">education</span> · <span class="hint-key">contact</span></span>
+  </div>
+</div>
+
+<script>
+/* ──────────────────────────────────────────
+   MATRIX BACKGROUND
+────────────────────────────────────────── */
+const mc = document.getElementById('matrix');
+const mctx = mc.getContext('2d');
+mc.width = window.innerWidth; mc.height = window.innerHeight;
+const COLS = Math.floor(mc.width / 14);
+const drops = Array(COLS).fill(1);
+const CH = 'アイウエカKUBERNETESTERRAFORMDOCKERAWSAZUREGCPPYTHONREACT01'.split('');
+function drawMatrix() {
+  mctx.fillStyle = 'rgba(10,14,23,.06)';
+  mctx.fillRect(0, 0, mc.width, mc.height);
+  mctx.fillStyle = '#00ff88'; mctx.font = '12px JetBrains Mono, monospace';
+  drops.forEach((y, i) => {
+    mctx.fillText(CH[Math.floor(Math.random()*CH.length)], i*14, y*14);
+    if (y*14 > mc.height && Math.random() > .975) drops[i] = 0;
+    drops[i]++;
+  });
+}
+setInterval(drawMatrix, 55);
+
+/* ──────────────────────────────────────────
+   TERMINAL ENGINE
+────────────────────────────────────────── */
+const output = document.getElementById('output');
+const input  = document.getElementById('cmd');
+const acBox  = document.getElementById('ac');
+let history = [], histIdx = -1, acIdx = -1, acMatches = [];
+
+/* ── Render helpers ── */
+function line(cls, html) {
+  const d = document.createElement('div');
+  d.className = 'line ' + cls;
+  d.innerHTML = html;
+  output.appendChild(d);
+}
+function blank() { line('line-blank', ''); }
+function sep() { line('line-sep', '─'.repeat(72)); }
+function scroll() { output.scrollTop = output.scrollHeight; }
+
+/* ── Boot sequence ── */
+function boot() {
+  line('ascii',
+`  ██╗  ██╗ █████╗ ██████╗ ███████╗██╗  ██╗ █████╗
+  ██║  ██║██╔══██╗██╔══██╗██╔════╝██║  ██║██╔══██╗
+  ███████║███████║██████╔╝███████╗███████║███████║
+  ██╔══██║██╔══██║██╔══██╗╚════██║██╔══██║██╔══██║
+  ██║  ██║██║  ██║██║  ██║███████║██║  ██║██║  ██║
+  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝`);
+  blank();
+  line('line-success line-bold', 'Masandrapalya Vanarajaiah Interactive Terminal v2.6.1');
+  line('line-info', 'Senior Software Engineer · Cloud · AI · Infrastructure');
+  blank();
+  line('line-info', 'System initialising…');
+
+  let steps = [
+    [300,  () => line('line-success', '  [OK] Kubernetes clusters: 100+ connected')],
+    [550,  () => line('line-success', '  [OK] Multi-cloud: AWS · Azure · GCP online')],
+    [800,  () => line('line-success', '  [OK] AI platform: 50M+ TPM capacity')],
+    [1050, () => line('line-success', '  [OK] Profile data loaded — George Mason University')],
+    [1300, () => {
+      blank();
+      line('line-warn', 'Type <span style="color:#00ff88">help</span> to see available commands.');
+      line('line-info', 'Tip: Tab autocompletes commands. ↑↓ navigates history.');
+      blank();
+    }],
+  ];
+  steps.forEach(([delay, fn]) => setTimeout(() => { fn(); scroll(); }, delay));
+}
+
+/* ──────────────────────────────────────────
+   COMMANDS
+────────────────────────────────────────── */
+const CMDS = {
+  help: {
+    desc: 'Show available commands',
+    run() {
+      blank();
+      line('line-cyan line-bold', 'Available Commands');
+      sep();
+      const cmds = [
+        ['whoami',      'Personal bio and summary'],
+        ['experience',  'Full work history with impact metrics'],
+        ['skills',      'Technical skill stack'],
+        ['projects',    'Featured projects'],
+        ['education',   'Academic background'],
+        ['contact',     'How to reach me'],
+        ['stats',       'Key impact numbers at a glance'],
+        ['portfolio',   'Open the main portfolio site'],
+        ['clear',       'Clear the terminal'],
+        ['sudo hire me','🚀 Special command…'],
+        ['ping',        'Test connection'],
+        ['echo',        'Echo text back'],
+        ['uname',       'System info'],
+        ['history',     'Command history'],
+      ];
+      cmds.forEach(([cmd, desc]) => {
+        line('line-val', `  <span class="line-key" style="display:inline-block;min-width:160px">${cmd}</span><span class="line-info">${desc}</span>`);
+      });
+      blank();
+    }
+  },
+
+  whoami: {
+    desc: 'Personal bio',
+    run() {
+      blank();
+      line('line-cyan line-bold', '┌─ whoami ──────────────────────────────────────────');
+      blank();
+      line('line-val', '  <span class="line-key">Name       </span>  Harsha Masandrapalya Vanarajaiah');
+      line('line-val', '  <span class="line-key">Role       </span>  Senior Software Engineer');
+      line('line-val', '  <span class="line-key">Company    </span>  <span class="line-cyan">Strategy (formerly MicroStrategy)</span>');
+      line('line-val', '  <span class="line-key">Location   </span>  Tysons, Virginia, USA');
+      line('line-val', '  <span class="line-key">Expertise  </span>  Cloud-Native K8s · AI/RAG · Multi-Cloud Infra');
+      line('line-val', '  <span class="line-key">Education  </span>  MS Computer Science · George Mason University (GPA 3.92)');
+      blank();
+      line('line-info', '  Senior Software Engineer building enterprise cloud platforms and AI-powered');
+      line('line-info', '  tools at scale. Architect and operator of multi-cloud Kubernetes infrastructure');
+      line('line-info', '  across AWS, Azure, GCP, and bare-metal — serving 100+ enterprise customers');
+      line('line-info', '  including air-gapped and compliance-regulated deployments.');
+      blank();
+      line('line-info', '  Pioneer of AI-augmented engineering workflows via Claude Code — delivering');
+      line('line-info', '  <span class="metric-box">3–4×</span> velocity improvements and strategic initiatives in weeks.');
+      blank();
+    }
+  },
+
+  stats: {
+    desc: 'Key metrics at a glance',
+    run() {
+      blank();
+      line('line-cyan line-bold', '┌─ Impact Stats ──────────────────────────────────────');
+      blank();
+      const stats = [
+        ['Enterprise Customers',      '100+',     'AWS · Azure · GCP · OpenShift · Bare-metal'],
+        ['Revenue Impact',            '$150M+',   'Multi-cloud BI SaaS · 800+ tenants · 10K+ users'],
+        ['AI Platform Throughput',    '50M+ TPM', '500K+ concurrent requests · Azure OpenAI + Vertex AI'],
+        ['Dev Velocity Gain',         '3–4×',     'Claude Code AI-augmented engineering workflows'],
+        ['Cloud Cost Saved',          '$1M/yr',   '200+ accounts · Lambda/API Gateway automation'],
+        ['Latency Improvement',       'p95 ↓50%', 'Adaptive LLM endpoint routing'],
+        ['Adoption Increase',         '+37%',     'Weighted traffic shifting · health-check routing'],
+        ['RAG Ticket Reduction',      '↓30–40%',  'Tier-1 support via 36K+ page AI knowledge base'],
+        ['Build Time Cut',            '45→17 min','GitOps CI/CD · GitHub Actions · CodePipeline'],
+        ['Hallucination Reduction',   '↓80%+',    'Hybrid vector+BM25 with confidence validation'],
+        ['Time-to-Production',        '4wk→2wk',  'Standardized onboarding for enterprise customers'],
+        ['RAG Pages Indexed',         '36,000+',  'Engineering · product · operational repos'],
+      ];
+      stats.forEach(([k, v, sub]) => {
+        line('line-val', `  <span class="line-info" style="display:inline-block;min-width:230px">${k}</span>  <span class="metric-box">${v}</span>  <span class="line-info" style="font-size:.72rem">${sub}</span>`);
+      });
+      blank();
+    }
+  },
+
+  experience: {
+    desc: 'Full work history',
+    run() {
+      blank();
+      line('line-cyan line-bold', '┌─ experience ────────────────────────────────────────');
+      blank();
+
+      const exp = [
+        {
+          role: 'Senior Software Engineer', co: 'Strategy', period: 'Feb 2026 – Present · Tysons, VA',
+          pts: [
+            'Cloud-agnostic K8s platform (Java Spring Boot Operator + Helm) — 15-state reconciliation across AWS/Azure/GCP/OpenShift/on-prem',
+            'AI RAG platform (OpenAI · Azure AI Search · Cosmos DB · FastAPI) — 36K+ pages, Tier-1 tickets ↓30–40%, hallucinations ↓80%+',
+            'Air-gapped deployments: private registry, OPA Gatekeeper, Pod Security, zero external deps',
+            'Telemetry pipeline: 500K+ records/mo from 100+ clusters via EventGrid → Azure Functions → PostgreSQL',
+          ],
+          chips: ['100+ Customers','36K+ Pages Indexed','Hallucinations ↓80%+','4wk→2wk Onboarding'],
+        },
+        {
+          role: 'Software Engineer', co: 'Strategy', period: 'Oct 2024 – Jan 2026 · Tysons, VA',
+          pts: [
+            'Multi-cloud BI SaaS (Terraform · Helm · K8s): 800+ tenants, 10K+ users — $150M+ revenue',
+            'Multi-LLM AI platform: 50M+ TPM, 500K+ concurrent reqs, Azure OpenAI + Vertex AI',
+            'Adaptive routing: p95 latency ↓50%+, adoption ↑37%, avoided 5× cost increase',
+            'Cross-platform CLI (Python/PyInstaller) — B2C OAuth, deploy/upgrade, preflight for 100+ customers',
+          ],
+          chips: ['$150M+ Revenue','50M+ TPM','p95 ↓50%','Adoption ↑37%'],
+        },
+        {
+          role: 'Associate Software Engineer', co: 'Strategy', period: 'Jun 2024 – Oct 2024 · Tysons, VA',
+          pts: [
+            'Halyard: cloud-agnostic K8s API (Java Spring Boot · Redis · Cloud SQL) — EKS/AKS/GKE',
+            'Cloud cost optimization: $1M/yr saved across 200+ accounts',
+            'GitOps CI/CD build time: 45 min → 17 min across 10+ repos',
+            'Terraform automation: 1,000+ cloud resources for 500+ enterprise customers',
+          ],
+          chips: ['$1M/yr Savings','45→17 min Builds'],
+        },
+        {
+          role: 'Graduate Teaching Assistant', co: 'George Mason University', period: 'Aug 2023 – May 2024 · Fairfax, VA',
+          pts: ['CS 367 (Computer Systems) · CS 465 (Computer Architecture) — 80 students','Designed CPU scheduling & UNIX shell projects (VIMU)'],
+          chips: ['80 Students','CS 367 · CS 465'],
+        },
+        {
+          role: 'Software Engineer', co: 'Accenture', period: 'Aug 2020 – Jul 2022 · Bengaluru, India',
+          pts: [
+            'Full-stack K8s services · Jenkins CI/CD: eliminated 80% manual labour',
+            'AWS: EC2, S3, Lambda, Route53, SNS, Auto Scaling · Packer AMI hardening',
+            '50+ Ansible roles/playbooks · Node.js: +25% backend perf · Data retrieval ↓30%',
+          ],
+          chips: ['CI/CD 80% ↓Labour','+25% Backend Perf','50+ Ansible Roles'],
+        },
+        {
+          role: 'Software Engineer Intern', co: 'Celestial V Solutions', period: 'Jun 2019 – Oct 2019 · Bengaluru, India',
+          pts: ['React.js UI components: +25% perf · 10+ REST microservices (Serverless framework)','Axios API integration for async HTTP requests'],
+          chips: ['+25% UI Perf','10+ Microservices'],
+        },
+      ];
+
+      exp.forEach(e => {
+        const d = document.createElement('div');
+        d.className = 'exp-entry';
+        d.innerHTML = `
+          <div class="exp-role-t">${e.role}</div>
+          <div class="exp-co">${e.co}</div>
+          <div class="exp-period">${e.period}</div>
+          <ul class="exp-pts">${e.pts.map(p=>`<li>${p}</li>`).join('')}</ul>
+          <div style="margin-top:.4rem">${e.chips.map(c=>`<span class="ic">${c}</span>`).join('')}</div>
+        `;
+        output.appendChild(d);
+      });
+      blank();
+    }
+  },
+
+  skills: {
+    desc: 'Technical skill stack',
+    run() {
+      blank();
+      line('line-cyan line-bold', '┌─ skills ───────────────────────────────────────────');
+      blank();
+      const groups = [
+        ['Languages',           'Python · TypeScript · JavaScript · Java · C · HTML/CSS'],
+        ['Cloud — AWS',         'EC2 · S3 · Lambda · API Gateway · DynamoDB · CloudFormation · Route53 · EKS'],
+        ['Cloud — Azure',       'AKS · Azure OpenAI · Azure AI Search · Azure DevOps · Azure NetApp Files · APIM'],
+        ['Cloud — GCP',         'GKE · Vertex AI (Gemini · Llama · Claude) · GCP Cloud SQL'],
+        ['Container / K8s',     'Kubernetes · Helm · Docker · OPA Gatekeeper · Pod Security · KEDA'],
+        ['IaC / DevOps',        'Terraform · Ansible · Jenkins · GitHub Actions · AWS CodePipeline'],
+        ['AI / ML',             'RAG Pipelines · LLM Orchestration · Vector Search · BM25 Reranking · Agentic AI'],
+        ['Observability',       'Prometheus · Grafana · Azure Monitor · EventGrid'],
+        ['Web / Backend',       'React · Next.js · Node.js · Express · FastAPI · Spring Boot'],
+        ['Databases',           'PostgreSQL · MongoDB · MySQL · Redis · Cosmos DB · DynamoDB'],
+        ['Tools',               'Postman · Swagger · Packer · Git · Jira'],
+      ];
+      groups.forEach(([cat, skills]) => {
+        line('skill-row', `  <span class="skill-cat" style="display:inline-block;min-width:200px">${cat}</span>  <span class="skill-list-txt">${skills}</span>`);
+      });
+      blank();
+      line('line-info', '  Soft Skills: Leadership · Communication · Team Management · Problem-Solving');
+      blank();
+    }
+  },
+
+  projects: {
+    desc: 'Featured projects',
+    run() {
+      blank();
+      line('line-cyan line-bold', '┌─ projects ──────────────────────────────────────────');
+      blank();
+      const projs = [
+        {
+          name: 'Rapid Cloudify', url: 'https://rapidcloudify.com',
+          stack: 'Python · Ansible · AWS · Next.js · Flask · Redis',
+          desc: 'No-code cloud deployment platform for 20+ tech stacks. One-click CI/CD, infra provisioning, zero manual configs.',
+        },
+        {
+          name: 'Enterprise RAG Platform', url: null,
+          stack: 'OpenAI · Azure AI Search · Cosmos DB · FastAPI',
+          desc: '36K+ page AI knowledge base. Hybrid vector+BM25 retrieval. Tier-1 tickets ↓30–40%, hallucinations ↓80%+.',
+        },
+        {
+          name: 'Multi-LLM AI Platform', url: null,
+          stack: 'Azure OpenAI · Vertex AI · Kubernetes · APIM',
+          desc: '50M+ TPM, 500K+ concurrent requests. Adaptive routing: p95 ↓50%+, adoption ↑37%.',
+        },
+        {
+          name: 'Halyard K8s Provisioner', url: null,
+          stack: 'Java Spring Boot · Redis · Terraform · Kubernetes',
+          desc: 'Cloud-agnostic K8s lifecycle API: EKS, AKS, GKE. GitOps CI/CD: build time 45→17 min.',
+        },
+        {
+          name: 'Social Media Platform', url: 'https://social-meida123.vercel.app/',
+          stack: 'Next.js · TypeScript · Tailwind · MongoDB',
+          desc: 'Full-stack social media site with real-time features.',
+        },
+      ];
+      projs.forEach(p => {
+        blank();
+        line('line-val line-bold', `  ⬡ ${p.name}${p.url ? `  <a class="line-link" href="${p.url}" target="_blank">${p.url} ↗</a>` : ''}`);
+        line('line-info', `    Stack: ${p.stack}`);
+        line('line-info', `    ${p.desc}`);
+      });
+      blank();
+    }
+  },
+
+  education: {
+    desc: 'Academic background',
+    run() {
+      blank();
+      line('line-cyan line-bold', '┌─ education ─────────────────────────────────────────');
+      blank();
+      line('line-val line-bold', '  🎓 George Mason University');
+      line('line-val', '     <span class="line-cyan">M.S. Computer Science</span>  ·  Concentration: Web-Based Software Engineering');
+      line('line-info','     Fairfax, Virginia  ·  Aug 2022 – May 2024');
+      line('line-success','     GPA: <span class="metric-box">3.92 / 4.0</span>');
+      line('line-info', '     Coursework: Algorithms · NLP · Database Systems · Software Architecture · Software Testing · CS Systems');
+      blank();
+      line('line-val line-bold', '  🏛️  Visveswaraya Technological University');
+      line('line-val', '     <span class="line-cyan">B.Tech Computer Science &amp; Engineering</span>');
+      line('line-info','     Belgaum, Karnataka, India  ·  Aug 2016 – May 2020');
+      line('line-success','     GPA: <span class="metric-box">3.52 / 4.0</span>');
+      line('line-info', '     Coursework: Machine Learning · Cloud Computing · Data Structures · OS · Networks · Cryptography');
+      blank();
+    }
+  },
+
+  contact: {
+    desc: 'How to reach Harsha',
+    run() {
+      blank();
+      line('line-cyan line-bold', '┌─ contact ───────────────────────────────────────────');
+      blank();
+      line('line-val', '  <span class="line-key">LinkedIn</span>   <a class="line-link" href="https://www.linkedin.com/in/harshamasandrapalyavanarajaiah/" target="_blank">linkedin.com/in/harshamasandrapalyavanarajaiah ↗</a>');
+      line('line-val', '  <span class="line-key">Email    </span>   <a class="line-link" href="mailto:harshamasandr@gmail.com">harshamasandr@gmail.com</a>');
+      line('line-val', '  <span class="line-key">GitHub   </span>   <a class="line-link" href="https://github.com/vashihatej" target="_blank">github.com/vashihatej ↗</a>');
+      line('line-val', '  <span class="line-key">Resume   </span>   <a class="line-link" href="../public/documents/Harsha_Masadrapalya_Resume.pdf" target="_blank">Harsha_Masandrapalya_Resume.pdf ↗</a>');
+      line('line-val', '  <span class="line-key">Location </span>   Tysons, Virginia, USA');
+      blank();
+      line('line-info', '  Open to: Senior Engineering · Staff Engineer · Platform Architect · AI/Cloud roles');
+      blank();
+    }
+  },
+
+  portfolio: {
+    desc: 'Open main portfolio',
+    run() {
+      line('line-success', 'Opening portfolio…');
+      setTimeout(() => window.open('template-enhanced.html', '_blank'), 400);
+    }
+  },
+
+  clear: {
+    desc: 'Clear the terminal',
+    run() { output.innerHTML = ''; }
+  },
+
+  ping: {
+    desc: 'Test connectivity',
+    run() {
+      blank();
+      line('line-info', 'PING harsha.cloud — 56 bytes of data');
+      let i = 0;
+      const iv = setInterval(() => {
+        const ms = (Math.random()*3+1).toFixed(2);
+        line('line-success', `64 bytes from harsha.cloud: icmp_seq=${i} ttl=64 time=${ms} ms`);
+        scroll();
+        if (++i >= 4) { clearInterval(iv); blank(); line('line-success', '4 packets transmitted, 4 received, 0% packet loss'); blank(); }
+      }, 350);
+    }
+  },
+
+  uname: {
+    desc: 'System info',
+    run() {
+      blank();
+      line('line-val', 'System:    Harsha Portfolio OS v2.6.1');
+      line('line-val', 'Kernel:    cloud-native-linux 6.1.0-harsha');
+      line('line-val', 'Platform:  AWS · Azure · GCP · OpenShift · Bare-metal');
+      line('line-val', 'Runtime:   Next.js / React / Node.js');
+      line('line-val', 'AI Engine: OpenAI · Claude · Gemini · Llama');
+      line('line-val', 'Uptime:    5+ years engineering experience');
+      blank();
+    }
+  },
+
+  history: {
+    desc: 'Show command history',
+    run() {
+      blank();
+      if (!history.length) { line('line-info', '  No commands in history.'); }
+      else { history.forEach((h, i) => line('line-info', `  ${i+1}  ${h}`)); }
+      blank();
+    }
+  },
+
+  'sudo hire me': {
+    desc: '🚀 Special command',
+    run() {
+      blank();
+      line('line-warn', 'sudo: checking credentials…');
+      setTimeout(() => {
+        line('line-success line-bold', '✓ Authentication successful. Excellent taste confirmed.');
+        blank();
+        line('line-success', '  Harsha Masandrapalya Vanarajaiah is now deployed to your team.');
+        blank();
+        line('line-info',  '  What you get:');
+        line('line-success','  ▸ Cloud-native K8s platform engineer with 5+ yrs experience');
+        line('line-success','  ▸ Multi-cloud expertise: AWS · Azure · GCP · OpenShift');
+        line('line-success','  ▸ AI/RAG systems builder — 50M+ TPM platforms');
+        line('line-success','  ▸ 3–4× dev velocity via AI-augmented workflows');
+        line('line-success','  ▸ GMU MS CS graduate · GPA 3.92');
+        blank();
+        line('line-warn',  '  Next step → run: contact');
+        blank();
+        scroll();
+      }, 800);
+    }
+  },
+};
+
+/* ── Command runner ── */
+function run(raw) {
+  const cmd = raw.trim().toLowerCase();
+  if (!cmd) return;
+  blank();
+  line('line-cmd', raw);
+  if (history[history.length-1] !== raw) history.push(raw);
+  histIdx = history.length;
+
+  if (cmd.startsWith('echo ')) {
+    line('line-val', raw.slice(5));
+  } else if (CMDS[cmd]) {
+    CMDS[cmd].run();
+  } else {
+    line('line-err', `command not found: ${cmd}. Type <span style="color:#00ff88">help</span> for available commands.`);
+    blank();
+  }
+  scroll();
+}
+
+/* ── Input handling ── */
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    closeAC();
+    const v = input.value;
+    input.value = '';
+    run(v);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (histIdx > 0) { histIdx--; input.value = history[histIdx]; }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (histIdx < history.length - 1) { histIdx++; input.value = history[histIdx]; }
+    else { histIdx = history.length; input.value = ''; }
+  } else if (e.key === 'Tab') {
+    e.preventDefault();
+    if (acMatches.length) {
+      acIdx = (acIdx + 1) % acMatches.length;
+      input.value = acMatches[acIdx];
+      highlightAC();
+    }
+  } else if (e.ctrlKey && e.key === 'l') {
+    e.preventDefault(); CMDS.clear.run();
+  }
+});
+
+input.addEventListener('input', () => {
+  const v = input.value.toLowerCase();
+  if (!v) { closeAC(); return; }
+  acMatches = Object.keys(CMDS).filter(k => k.startsWith(v) && k !== v);
+  acIdx = -1;
+  if (acMatches.length) {
+    acBox.innerHTML = acMatches.slice(0,6).map((m, i) =>
+      `<div class="ac-item" data-idx="${i}">
+        <span class="ac-cmd">${m}</span>
+        <span class="ac-desc"> — ${CMDS[m].desc}</span>
+      </div>`
+    ).join('');
+    acBox.style.display = 'block';
+  } else { closeAC(); }
+});
+
+acBox.addEventListener('click', e => {
+  const item = e.target.closest('.ac-item');
+  if (item) { input.value = acMatches[+item.dataset.idx]; closeAC(); input.focus(); }
+});
+
+function closeAC() { acBox.style.display = 'none'; acMatches = []; acIdx = -1; }
+
+function highlightAC() {
+  acBox.querySelectorAll('.ac-item').forEach((el, i) => {
+    el.classList.toggle('selected', i === acIdx);
+  });
+}
+
+document.addEventListener('click', e => {
+  if (!acBox.contains(e.target) && e.target !== input) closeAC();
+});
+
+/* ── Boot ── */
+boot();
+</script>
+</body>
+</html>

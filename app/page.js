@@ -1,102 +1,77 @@
 "use client";
 
 import { useEffect } from "react";
-
 import AboutMeComponent from "./about-me/about-me";
 import IntroSection from "./components/introSection";
 import EducationComponent from "./education/education";
 import SkillsComponent from "./skills/skills";
 import ExperienceComponent from "./experience/experience";
 import ProjectsComponent from "./projects/projects";
+import ContactSection from "./contact/contact";
+import Footer from "./components/footer";
+import ParticleCanvas from "./components/ParticleCanvas";
+import { useScrollReveal } from "./hooks/useScrollReveal";
 
 export default function Home() {
+  useScrollReveal();
+
   useEffect(() => {
-    const handleHashChange = () => {
-      const { hash } = window.location;
-      if (hash) {
-        const element = document.getElementById(hash.substring(1));
-        if (element) {
-          scrollTo(element);
-        }
-      }
+    const dot = document.getElementById("cursor-dot");
+    const ring = document.getElementById("cursor-ring");
+    const bar = document.getElementById("scroll-bar");
+
+    let rx = 0, ry = 0;
+    const onMove = (e) => {
+      if (dot) { dot.style.left = e.clientX + "px"; dot.style.top = e.clientY + "px"; }
+      rx += (e.clientX - rx) * 0.12;
+      ry += (e.clientY - ry) * 0.12;
+      if (ring) { ring.style.left = rx + "px"; ring.style.top = ry + "px"; }
     };
 
-    window.addEventListener("hashchange", handleHashChange);
-    handleHashChange();
+    const onScroll = () => {
+      if (!bar) return;
+      const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+      bar.style.width = pct + "%";
+    };
+
+    const animateRing = () => {
+      if (ring) { ring.style.left = rx + "px"; ring.style.top = ry + "px"; }
+      requestAnimationFrame(animateRing);
+    };
+    animateRing();
+
+    document.addEventListener("mousemove", onMove);
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      window.removeEventListener("hashchange", handleHashChange);
+      document.removeEventListener("mousemove", onMove);
+      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
-  const scrollTo = (element) => {
-    const offsetTop = element.getBoundingClientRect().top;
-    const duration = 800;
-
-    const startTime = performance.now();
-    const startOffset = window.scrollY;
-
-    function scroll(timestamp) {
-      const elapsed = timestamp - startTime;
-      const progress = elapsed / duration;
-
-      window.scrollTo({
-        top: startOffset + offsetTop * ease(progress),
-        behavior: "auto",
-      });
-
-      if (elapsed < duration) {
-        requestAnimationFrame(scroll);
-      }
-    }
-
-    requestAnimationFrame(scroll);
-  };
-
-  const ease = (t) =>
-    t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
-
   return (
-    <div className="text-black dark:text-white bg-white dark:bg-black">
-      <div className="md:container-xl md:mx-auto flex min-h-screen flex-col items-center justify-between p-2 pt-24">
-        <section className="d-block px-2 py-14 w-9/12 sm:w-full sm:pt-0 sm:pb-18 lg:px-4">
-          <IntroSection />
-        </section>
+    <>
+      {/* Custom cursor */}
+      <div id="cursor-dot" />
+      <div id="cursor-ring" />
 
-        <section
-          id="about-me"
-          className="d-block px-2 py-4 w-9/12 sm:w-full sm:py-1 lg:px-4"
-        >
-          <AboutMeComponent />
-        </section>
+      {/* Scroll progress bar */}
+      <div id="scroll-bar" />
 
-        <section
-          id="education"
-          className="d-block px-2 py-8 w-9/12 sm:w-full sm:py-8 lg:px-4"
-        >
-          <EducationComponent />
-        </section>
+      {/* Background orbs */}
+      <div className="orb orb1" />
+      <div className="orb orb2" />
 
-        <section
-          id="experience"
-          className="d-block px-2 py-8 w-9/12 sm:w-full sm:py-8 lg:px-4"
-        >
-          <ExperienceComponent />
-        </section>
+      {/* Particle canvas */}
+      <ParticleCanvas />
 
-        <section
-          id="skills"
-          className="d-block px-2 py-8 w-9/12 sm:w-full sm:py-8 lg:px-4"
-        >
-          <SkillsComponent />
-        </section>
-
-        <section
-          id="projects"
-          className="d-block px-2 py-8 w-9/12 sm:w-full sm:py-8 lg:px-4"
-        >
-          <ProjectsComponent />
-        </section>
-      </div>
-    </div>
+      <IntroSection />
+      <AboutMeComponent />
+      <ExperienceComponent />
+      <SkillsComponent />
+      <ProjectsComponent />
+      <EducationComponent />
+      <ContactSection />
+      <Footer />
+    </>
   );
 }

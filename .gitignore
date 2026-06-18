@@ -9,6 +9,10 @@ node_modules/
 # production
 /build
 
+# Next.js
+/.next/
+/out/
+
 # misc
 .DS_Store
 .env.local

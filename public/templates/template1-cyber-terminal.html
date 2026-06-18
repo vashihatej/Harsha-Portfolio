@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harsha MV — Template 1: Cyber Terminal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700;900&display=swap');
+
+  :root {
+    --bg: #080b0f;
+    --bg2: #0d1117;
+    --bg3: #161b22;
+    --green: #00ff88;
+    --green2: #00cc6e;
+    --cyan: #00d4ff;
+    --purple: #bd93f9;
+    --yellow: #f1fa8c;
+    --red: #ff5555;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --border: #21262d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Canvas for matrix background */
+  #matrix-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* NAVBAR */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(8, 11, 15, 0.95);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+  }
+
+  nav .nav-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+
+  .nav-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+  }
+
+  .nav-logo span { color: var(--muted); }
+
+  nav ul {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+  }
+
+  nav a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  nav a:hover { color: var(--green); }
+
+  .nav-cta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--green) !important;
+    border: 1px solid var(--green);
+    padding: 0.4rem 0.9rem;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .nav-cta:hover {
+    background: var(--green);
+    color: var(--bg) !important;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 130px 0 80px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+  }
+
+  .terminal-window {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    width: 100%;
+    box-shadow: 0 0 60px rgba(0, 255, 136, 0.08), 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .terminal-bar {
+    background: var(--bg3);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red { background: #ff5f56; }
+  .dot-yellow { background: #ffbd2e; }
+  .dot-green { background: #27c93f; }
+
+  .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .terminal-body {
+    padding: 2rem 2.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 1.8;
+  }
+
+  .prompt { color: var(--green); }
+  .prompt-path { color: var(--cyan); }
+  .prompt-arrow { color: var(--green); }
+  .output-key { color: var(--purple); }
+  .output-val { color: var(--text); }
+  .output-str { color: var(--yellow); }
+  .output-num { color: var(--cyan); }
+  .output-bool { color: var(--green); }
+
+  .typing-line {
+    display: flex;
+    align-items: center;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1.1em;
+    background: var(--green);
+    margin-left: 4px;
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .stat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+  }
+
+  .stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  .stat-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  /* SECTION */
+  .section {
+    padding: 80px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-header {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2.5rem;
+  }
+
+  /* EXPERIENCE TIMELINE */
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--green), transparent);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 2.5rem;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2rem;
+    top: 8px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    transform: translateX(-4px);
+  }
+
+  .exp-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    gap: 1rem;
+  }
+
+  .exp-role {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .exp-company {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--cyan);
+    margin-top: 2px;
+  }
+
+  .exp-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+
+  .exp-bullets {
+    list-style: none;
+    margin-top: 0.8rem;
+  }
+
+  .exp-bullets li {
+    font-size: 0.88rem;
+    color: var(--muted);
+    padding-left: 1.2em;
+    position: relative;
+    margin-bottom: 0.4rem;
+    line-height: 1.6;
+  }
+
+  .exp-bullets li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-size: 0.8em;
+  }
+
+  /* SKILLS */
+  .skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1rem;
+  }
+
+  .skill-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: var(--bg3);
+    transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+
+  .skill-tag:hover {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 8px rgba(0,255,136,0.2);
+  }
+
+  .skill-tag.cloud { border-color: rgba(0, 212, 255, 0.3); color: var(--cyan); }
+  .skill-tag.ai { border-color: rgba(189, 147, 249, 0.3); color: var(--purple); }
+  .skill-tag.infra { border-color: rgba(0, 255, 136, 0.3); color: var(--green); }
+  .skill-tag.lang { border-color: rgba(241, 250, 140, 0.3); color: var(--yellow); }
+
+  .skill-category {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 1.5rem;
+    margin-bottom: 0.6rem;
+  }
+
+  /* PROJECTS */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.2rem;
+  }
+
+  .project-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+  }
+
+  .project-card:hover {
+    border-color: var(--green);
+    box-shadow: 0 0 20px rgba(0,255,136,0.1);
+    transform: translateY(-2px);
+  }
+
+  .project-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .project-name::before {
+    content: '⬡';
+    color: var(--green);
+    font-size: 0.8em;
+  }
+
+  .project-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .project-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .stack-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(0,255,136,0.08);
+    color: var(--green);
+    border-radius: 3px;
+    border: 1px solid rgba(0,255,136,0.2);
+  }
+
+  /* SOCIAL LINKS */
+  .socials {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .social-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.2s;
+    background: var(--bg3);
+  }
+
+  .social-btn:hover {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem 0;
+    text-align: center;
+  }
+
+  footer p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  footer span { color: var(--green); }
+
+  /* EDUCATION */
+  .edu-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .edu-school { font-size: 1rem; font-weight: 600; color: var(--text); }
+  .edu-degree { font-size: 0.88rem; color: var(--cyan); margin-top: 0.2rem; }
+  .edu-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  /* Glowing divider */
+  .glow-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    margin: 1rem 0;
+    opacity: 0.4;
+  }
+
+  .tag-template {
+    position: fixed;
+    top: 70px; right: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    background: var(--green);
+    color: var(--bg);
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    z-index: 200;
+    font-weight: 700;
+  }
+
+  @media (max-width: 768px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .projects-grid { grid-template-columns: 1fr; }
+    .exp-header { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+
+<div class="tag-template">TEMPLATE 1 — CYBER TERMINAL</div>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo"><span>~/</span>harsha-mv<span>.sh</span></div>
+    <ul>
+      <li><a href="#experience">experience</a></li>
+      <li><a href="#skills">skills</a></li>
+      <li><a href="#projects">projects</a></li>
+      <li><a href="#education">education</a></li>
+    </ul>
+    <a href="mailto:harshamasandr@gmail.com" class="nav-cta">./contact.sh</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="terminal-window">
+      <div class="terminal-bar">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <div class="terminal-title">harsha@cloud-engineer ~ bash</div>
+      </div>
+      <div class="terminal-body">
+        <div><span class="prompt-path">~/portfolio</span> <span class="prompt-arrow">❯</span> cat whoami.json</div>
+        <br>
+        <div>{</div>
+        <div>&nbsp;&nbsp;<span class="output-key">"name"</span>: <span class="output-str">"Harsha Masandrapalya Vanarajaiah"</span>,</div>
+        <div>&nbsp;&nbsp;<span class="output-key">"role"</span>: <span class="output-str">"Senior Software Engineer"</span>,</div>
+        <div>&nbsp;&nbsp;<span class="output-key">"company"</span>: <span class="output-str">"Strategy (formerly MicroStrategy)"</span>,</div>
+        <div>&nbsp;&nbsp;<span class="output-key">"location"</span>: <span class="output-str">"Tysons, Virginia"</span>,</div>
+        <div>&nbsp;&nbsp;<span class="output-key">"specialties"</span>: [</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="output-str">"Cloud-Native Kubernetes Platform Engineering"</span>,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="output-str">"Multi-Cloud Infrastructure (AWS · Azure · GCP)"</span>,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="output-str">"AI / RAG Systems &amp; LLM Orchestration"</span>,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="output-str">"Enterprise SaaS at Scale"</span></div>
+        <div>&nbsp;&nbsp;],</div>
+        <div>&nbsp;&nbsp;<span class="output-key">"education"</span>: <span class="output-str">"MS CS · George Mason University (GPA 3.92)"</span>,</div>
+        <div>&nbsp;&nbsp;<span class="output-key">"open_to"</span>: <span class="output-bool">true</span></div>
+        <div>}</div>
+        <br>
+        <div class="typing-line">
+          <span class="prompt-path">~/portfolio</span>&nbsp;<span class="prompt-arrow">❯</span>&nbsp;<span class="cursor"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-grid">
+      <div class="stat-card">
+        <div class="stat-label">Enterprise Customers Served</div>
+        <div class="stat-value">100+</div>
+        <div class="stat-sub">AWS · Azure · GCP · OpenShift · Bare-metal</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Revenue Impact</div>
+        <div class="stat-value">$150M+</div>
+        <div class="stat-sub">Multi-cloud BI SaaS platform · 10K+ users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">AI Platform Throughput</div>
+        <div class="stat-value">50M+ TPM</div>
+        <div class="stat-sub">Multi-LLM · Azure OpenAI · Vertex AI · Gemini</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Dev Velocity via AI Tooling</div>
+        <div class="stat-value">3–4×</div>
+        <div class="stat-sub">Claude Code · AI-augmented workflows</div>
+      </div>
+    </div>
+
+    <div class="socials">
+      <a href="mailto:harshamasandr@gmail.com" class="social-btn">✉ harshamasandr@gmail.com</a>
+      <a href="https://linkedin.com/in/harshamasandrapalyavanarajaiah/" class="social-btn">in LinkedIn</a>
+      <a href="https://github.com/vashihatej" class="social-btn">⌥ GitHub</a>
+      <a href="#" class="social-btn">⬇ Resume.pdf</a>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section class="section" id="experience">
+  <div class="container">
+    <div class="section-header">// work history</div>
+    <div class="section-title">Experience</div>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="exp-header">
+          <div>
+            <div class="exp-role">Senior Software Engineer</div>
+            <div class="exp-company">Strategy (formerly MicroStrategy)</div>
+          </div>
+          <div class="exp-date">Feb 2026 – Present · Tysons, VA</div>
+        </div>
+        <ul class="exp-bullets">
+          <li>Built cloud-agnostic Kubernetes platform via Java/Spring Boot Operator with 15-state reconciliation engine — AWS, Azure, GCP, OpenShift, on-prem.</li>
+          <li>Designed AI-powered RAG platform (OpenAI · Azure AI Search · Cosmos DB · FastAPI) indexing 36K+ pages, cutting Tier-1 tickets by 30–40%.</li>
+          <li>Led production onboarding for 10–15 concurrent enterprise customers; reduced time-to-production from 4–6 weeks to under 2 weeks.</li>
+          <li>Delivered 3–4× dev velocity via Claude Code AI-assisted engineering workflows.</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item">
+        <div class="exp-header">
+          <div>
+            <div class="exp-role">Software Engineer</div>
+            <div class="exp-company">Strategy</div>
+          </div>
+          <div class="exp-date">Oct 2024 – Jan 2026 · Tysons, VA</div>
+        </div>
+        <ul class="exp-bullets">
+          <li>Architected multi-cloud BI SaaS platform (Terraform · Helm · K8s) serving 800+ tenants, 10K+ users — contributing to $150M+ revenue.</li>
+          <li>Built scalable multi-LLM AI platform handling 50M+ TPM and 500K+ concurrent requests across Azure OpenAI and Vertex AI.</li>
+          <li>Introduced adaptive endpoint routing reducing p95 latency 50%+ and increasing adoption 37%.</li>
+          <li>Developed cross-platform CLI (Python/PyInstaller) for 100+ customers — auth, deploy, upgrade, validation.</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item">
+        <div class="exp-header">
+          <div>
+            <div class="exp-role">Associate Software Engineer</div>
+            <div class="exp-company">Strategy</div>
+          </div>
+          <div class="exp-date">Jun 2024 – Oct 2024 · Tysons, VA</div>
+        </div>
+        <ul class="exp-bullets">
+          <li>Built Halyard — cloud-agnostic API (Java Spring Boot · Redis · Cloud SQL) automating multi-tenant K8s provisioning across AWS/GCP/Azure.</li>
+          <li>Built automated cloud cost optimization across 200+ accounts saving $1M annually.</li>
+          <li>Engineered GitOps CI/CD pipeline reducing container build time from 45 → 17 min.</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item">
+        <div class="exp-header">
+          <div>
+            <div class="exp-role">Software Engineer</div>
+            <div class="exp-company">Accenture</div>
+          </div>
+          <div class="exp-date">Aug 2020 – Jul 2022 · Bengaluru, India</div>
+        </div>
+        <ul class="exp-bullets">
+          <li>Full-stack containerized services on K8s · Jenkins CI/CD · AWS infrastructure (EC2, S3, Lambda, Route53).</li>
+          <li>50+ Ansible roles/playbooks · Packer AMI standardization · Node.js modules with 25% backend performance gain.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section class="section" id="skills">
+  <div class="container">
+    <div class="section-header">// tech stack</div>
+    <div class="section-title">Skills</div>
+
+    <div class="skill-category">Languages</div>
+    <div class="skills-grid">
+      <span class="skill-tag lang">Python</span>
+      <span class="skill-tag lang">TypeScript</span>
+      <span class="skill-tag lang">JavaScript</span>
+      <span class="skill-tag lang">Java</span>
+      <span class="skill-tag lang">HTML/CSS</span>
+      <span class="skill-tag lang">C</span>
+    </div>
+
+    <div class="skill-category">Cloud Platforms</div>
+    <div class="skills-grid">
+      <span class="skill-tag cloud">AWS</span>
+      <span class="skill-tag cloud">Azure</span>
+      <span class="skill-tag cloud">GCP</span>
+      <span class="skill-tag cloud">EC2 / EKS / S3 / Lambda</span>
+      <span class="skill-tag cloud">Azure AKS / OpenAI / AI Search</span>
+      <span class="skill-tag cloud">GKE / Vertex AI</span>
+      <span class="skill-tag cloud">OpenShift</span>
+    </div>
+
+    <div class="skill-category">Infrastructure & DevOps</div>
+    <div class="skills-grid">
+      <span class="skill-tag infra">Kubernetes</span>
+      <span class="skill-tag infra">Terraform</span>
+      <span class="skill-tag infra">Helm</span>
+      <span class="skill-tag infra">Docker</span>
+      <span class="skill-tag infra">Ansible</span>
+      <span class="skill-tag infra">Jenkins</span>
+      <span class="skill-tag infra">GitHub Actions</span>
+      <span class="skill-tag infra">Redis</span>
+      <span class="skill-tag infra">Prometheus / Grafana</span>
+      <span class="skill-tag infra">KEDA</span>
+    </div>
+
+    <div class="skill-category">AI / Data</div>
+    <div class="skills-grid">
+      <span class="skill-tag ai">OpenAI / GPT</span>
+      <span class="skill-tag ai">RAG Pipelines</span>
+      <span class="skill-tag ai">LLM Orchestration</span>
+      <span class="skill-tag ai">Azure AI Search</span>
+      <span class="skill-tag ai">Gemini / Llama / Claude</span>
+      <span class="skill-tag ai">Vector Search</span>
+      <span class="skill-tag ai">BM25 / Reranking</span>
+    </div>
+
+    <div class="skill-category">Web & Backend</div>
+    <div class="skills-grid">
+      <span class="skill-tag">React / Next.js</span>
+      <span class="skill-tag">Node.js / Express</span>
+      <span class="skill-tag">FastAPI</span>
+      <span class="skill-tag">Spring Boot</span>
+      <span class="skill-tag">PostgreSQL</span>
+      <span class="skill-tag">MongoDB</span>
+      <span class="skill-tag">DynamoDB / Cosmos DB</span>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section class="section" id="projects">
+  <div class="container">
+    <div class="section-header">// shipped work</div>
+    <div class="section-title">Projects</div>
+
+    <div class="projects-grid">
+      <div class="project-card">
+        <div class="project-name">Rapid Cloudify</div>
+        <div class="project-desc">No-code platform automating cloud deployments, CI/CD pipelines, and infrastructure provisioning for 20+ tech stacks. One-click scalability, real-time collaboration, zero manual configs.</div>
+        <div class="project-stack">
+          <span class="stack-badge">Python</span>
+          <span class="stack-badge">Ansible</span>
+          <span class="stack-badge">AWS</span>
+          <span class="stack-badge">Next.js</span>
+          <span class="stack-badge">Flask</span>
+          <span class="stack-badge">Redis</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-name">Multi-LLM AI Platform</div>
+        <div class="project-desc">Enterprise AI platform handling 50M+ tokens/min across Azure OpenAI and Vertex AI with adaptive routing, p95 latency reduction 50%+, and APIM-based regional endpoints.</div>
+        <div class="project-stack">
+          <span class="stack-badge">Azure OpenAI</span>
+          <span class="stack-badge">Vertex AI</span>
+          <span class="stack-badge">APIM</span>
+          <span class="stack-badge">Kubernetes</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-name">RAG Support Platform</div>
+        <div class="project-desc">AI-powered knowledge platform indexing 36,000+ pages across engineering/product repositories. Reduced Tier-1 support tickets by 30–40%, halluciations down 80%+.</div>
+        <div class="project-stack">
+          <span class="stack-badge">OpenAI</span>
+          <span class="stack-badge">Azure AI Search</span>
+          <span class="stack-badge">Cosmos DB</span>
+          <span class="stack-badge">FastAPI</span>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-name">Halyard — K8s Provisioner</div>
+        <div class="project-desc">Cloud-agnostic API enabling automated provisioning of multi-tenant Kubernetes clusters across AWS (EKS), GCP (GKE), and Azure (AKS) with Redis-backed state management.</div>
+        <div class="project-stack">
+          <span class="stack-badge">Java Spring Boot</span>
+          <span class="stack-badge">Redis</span>
+          <span class="stack-badge">Terraform</span>
+          <span class="stack-badge">Kubernetes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EDUCATION -->
+<section class="section" id="education">
+  <div class="container">
+    <div class="section-header">// academic background</div>
+    <div class="section-title">Education</div>
+
+    <div class="edu-item">
+      <div class="edu-school">George Mason University</div>
+      <div class="edu-degree">Master of Science in Computer Science</div>
+      <div class="edu-meta">
+        <span>📍 Fairfax, Virginia</span>
+        <span>🗓 Aug 2022 – May 2024</span>
+        <span>📊 GPA: 3.92 / 4.0</span>
+      </div>
+      <div style="margin-top: 0.8rem; font-size: 0.82rem; color: var(--muted);">
+        Concentration in Web-Based Software Engineering · Algorithms · NLP · Database Systems · Software Architecture
+      </div>
+    </div>
+
+    <div class="edu-item">
+      <div class="edu-school">Visveswaraya Technological University</div>
+      <div class="edu-degree">Bachelor of Technology in Computer Science &amp; Engineering</div>
+      <div class="edu-meta">
+        <span>📍 Belgaum, Karnataka, India</span>
+        <span>🗓 Aug 2016 – May 2020</span>
+        <span>📊 GPA: 3.52 / 4.0</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Built with <span>❤</span> and lots of <span>kubectl apply</span> — Harsha Masandrapalya Vanarajaiah · 2026</p>
+</footer>
+
+<script>
+// Matrix rain effect
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+const cols = Math.floor(canvas.width / 16);
+const drops = Array(cols).fill(1);
+const chars = 'アイウエオカキクケコ01アBCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(8,11,15,0.05)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00ff88';
+  ctx.font = '14px JetBrains Mono, monospace';
+  drops.forEach((y, i) => {
+    const char = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillText(char, i * 16, y * 16);
+    if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  });
+}
+setInterval(drawMatrix, 60);
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+</script>
+</body>
+</html>
