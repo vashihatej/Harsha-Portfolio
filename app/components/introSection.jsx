@@ -60,20 +60,20 @@ export default function IntroSection() {
 
             <div className="mini-stats reveal-scale">
               <div className="mini-stat">
-                <div className="mini-stat-num">5+</div>
-                <div className="mini-stat-label">Years Exp</div>
+                <div className="mini-stat-num">$150M+</div>
+                <div className="mini-stat-label">Revenue Impact</div>
               </div>
               <div className="mini-stat">
-                <div className="mini-stat-num">100+</div>
-                <div className="mini-stat-label">Enterprise Customers</div>
+                <div className="mini-stat-num">50M+</div>
+                <div className="mini-stat-label">AI Tokens / Min</div>
               </div>
               <div className="mini-stat">
-                <div className="mini-stat-num">3–4×</div>
-                <div className="mini-stat-label">AI Dev Velocity</div>
+                <div className="mini-stat-num">↓80%</div>
+                <div className="mini-stat-label">Hallucination Rate</div>
               </div>
               <div className="mini-stat">
-                <div className="mini-stat-num">3.92</div>
-                <div className="mini-stat-label">MS GPA · GMU</div>
+                <div className="mini-stat-num">800+</div>
+                <div className="mini-stat-label">Enterprise Tenants</div>
               </div>
             </div>
           </div>

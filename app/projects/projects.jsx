@@ -47,15 +47,6 @@ const projects = [
     emoji: "📊",
     link: null,
   },
-  {
-    name: "VIMU — UNIX Shell Task Monitor",
-    description:
-      "A UNIX-like shell task monitor built as part of CS 467 graduate coursework at GMU. Features CPU scheduling simulation, process lifecycle management, and pipeline architectures — single-cycle, multiple-cycle, and pipelined implementations.",
-    tech: ["C", "Linux", "Systems Programming", "CPU Scheduling"],
-    chips: [{ label: "GMU CS 467", cls: "ic-slate" }, { label: "Systems", cls: "ic-teal" }],
-    emoji: "🖥️",
-    link: null,
-  },
 ];
 
 export default function ProjectsComponent() {
