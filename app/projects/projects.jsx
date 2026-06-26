@@ -3,6 +3,16 @@
 
 const projects = [
   {
+    name: "LeetCode Coach",
+    description:
+      "Open-source local AI coaching system for LeetCode that uses the Socratic method — it never gives you the answer, it asks questions until you find it yourself. Built a Chrome extension that streams live problem + code into the session, SM-2 spaced repetition review queue, per-pattern wiki with recognition signals and analogies, and a React dashboard with activity heatmap and attempt history.",
+    tech: ["Node.js", "SQLite", "React", "Vite", "Playwright", "Claude Code", "Chrome Extension"],
+    chips: [{ label: "Open Source", cls: "ic-teal" }, { label: "Socratic AI Coaching", cls: "ic-cyan" }],
+    emoji: "🧠",
+    link: "https://github.com/vashihatej/leetcode-coach",
+    isNew: true,
+  },
+  {
     name: "Halyard — Cloud-Agnostic K8s Platform",
     description:
       "Java Spring Boot Kubernetes Operator automating full lifecycle management across AWS EKS, Azure AKS, GCP GKE, OpenShift, and on-prem via a 15-state reconciliation engine — serving 100+ enterprise customers. Includes air-gapped deployments with private registry mirroring and OPA Gatekeeper.",
@@ -57,8 +67,37 @@ export default function ProjectsComponent() {
         <h2 className="section-title">Featured <span className="acc">Projects</span></h2>
         <div className="projects-grid">
           {projects.map((project, i) => (
-            <div key={i} className="project-card reveal">
-              <div className="project-emoji">{project.emoji}</div>
+            <div
+              key={i}
+              className="project-card reveal"
+              style={project.isNew ? {
+                borderColor: "rgba(13,148,136,0.45)",
+                boxShadow: "0 0 0 1px rgba(13,148,136,0.2), 0 8px 32px rgba(13,148,136,0.12)",
+              } : {}}
+            >
+              <div className="project-emoji">
+                {project.emoji}
+                {project.isNew && (
+                  <span style={{
+                    display: "inline-block",
+                    marginLeft: ".6rem",
+                    fontSize: ".58rem",
+                    fontWeight: 800,
+                    letterSpacing: ".6px",
+                    textTransform: "uppercase",
+                    color: "#2dd4bf",
+                    background: "rgba(13,148,136,0.15)",
+                    border: "1px solid rgba(13,148,136,0.35)",
+                    borderRadius: "100px",
+                    padding: ".18rem .55rem",
+                    verticalAlign: "middle",
+                    position: "relative",
+                    top: "-.3rem",
+                  }}>
+                    ✦ New
+                  </span>
+                )}
+              </div>
               <div className="project-content">
                 <div className="project-name">{project.name}</div>
                 <p className="project-desc">{project.description}</p>
@@ -75,7 +114,7 @@ export default function ProjectsComponent() {
               </div>
               {project.link && (
                 <a href={project.link} target="_blank" rel="noopener noreferrer" className="project-link">
-                  ↗ View
+                  ↗ {project.isNew ? "GitHub →" : "View"}
                 </a>
               )}
             </div>
